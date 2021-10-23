@@ -93,7 +93,7 @@ def download_and_upload_image():
   upload_date = datetime.date.today()
   
   for url in urls:
-    res = requests.get(url+":large").content # 抽出したurlから画像をダウンロード
+    res = requests.get(url+":orig").content # 抽出したurlから原寸画像をダウンロード
     print(url + "：の画像をダウンロードしました")
     bucket.upload_fileobj(io.BytesIO(res), str(upload_date) + '/' + url[27:]) # バケット名/YYYY-MM-DD/xxx.jpg の形式でS3にアップロード
     print("ダウンロードした画像をアップロードしました")
