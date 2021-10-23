@@ -77,6 +77,9 @@ def url_extract():
     except KeyError: # 取得したツイートに画像がない場合
       print(f"このツイート : 「{json_dictionary[i]['text']}」には画像が含まれていませんでした。")
     else:
+      # gifや動画のツイートからサムネイル画像を取得してしまうのを防ぐための処理
+      if json_dictionary[i]["extended_entities"]["media"][0]["type"] != "photo":
+        continue
       image_num = len(json_dictionary[i]["extended_entities"]["media"])
       for j in range(image_num):
         urls.append(json_dictionary[i]["extended_entities"]["media"][j]["media_url"])
