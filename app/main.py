@@ -18,8 +18,8 @@ twitter_params =  {"screen_name": "", # 取得するユーザーのTwitter ID
 json_dictionary = {}            # TwitterAPIから返ってきたJSONを辞書型に変換したものが入る
 urls = []                       # json_dictionaryから抽出した画像のURLが入る
 first_execution = True          # このプログラムの実行が初めてかどうかを示す
-previous_latest_tweet_id = 0    # 前回の実行で取得したツイートの中で投稿日が最新のツイートのIDが入る。そのツイートからそれ以前の日付のJSONデータをlatest_tweet_check()関数で削除するために使う
-
+previous_latest_tweet_id = 0    # 前回の実行で取得したツイートの中で投稿日が最新のツイートのIDが入る。
+                                # そのツイートからそれ以前の日付のJSONデータをlatest_tweet_check()関数で削除するために使う                           
 
 def main():
   print("現在時刻：" + str(datetime.datetime.now()))
@@ -58,7 +58,7 @@ def latest_tweet_check():
 
   new_latest_tweet_id = json_dictionary[0]["id"] # 今回取得した最新のツイートIDが入る
 
-  # 前回取得した最新のツイートからそれ以前のデータを削除し、次回のためにnew_latest_tweet_idをprevious_latest_tweet_idのに入れる
+  # 前回取得した最新のツイートからそれ以前のデータを削除し、次回のチェックのためにnew_latest_tweet_idをprevious_latest_tweet_idのに入れる
   for i in range(len(json_dictionary)):
     if(json_dictionary[i]["id"] == previous_latest_tweet_id):
       del json_dictionary[i:]
