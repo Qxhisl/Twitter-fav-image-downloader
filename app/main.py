@@ -15,7 +15,7 @@ twitter_params =  {"screen_name": "", # 取得するユーザーのTwitter ID
                    "count": 5         # いいねしたツイートの取得数(最大200)
                    }
 
-json_dictionary = {}            # TwitterAPIから返ってきたJSONを辞書型に変換したものが入る
+json_dictionary = []            # TwitterAPIから返ってくるJSON形式のstr型データをリストに内包される辞書型オブジェクトとして変換したものが入る = [{},{}...{}]
 urls = []                       # json_dictionaryから抽出した画像のURLが入る
 first_execution = True          # このプログラムの実行が初めてかどうかを示す
 previous_latest_tweet_id = 0    # 前回の実行で取得したツイートの中で投稿日が最新のツイートのIDが入る。
