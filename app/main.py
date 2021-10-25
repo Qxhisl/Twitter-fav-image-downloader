@@ -81,8 +81,7 @@ def latest_tweet_check() -> str:
 
   # いいねしているツイートが一つ以上存在する場合
   for i in range(len(json_dictionary)):
-    if json_dictionary[i]["id"] == latest_tweet_id:
-      latest_tweet_id = json_dictionary[0]["id"]
+    if json_dictionary[i]["id"] <= latest_tweet_id:
       del json_dictionary[i:]
 
       # 新しくいいねしたツイートが存在しなかった場合
@@ -130,7 +129,7 @@ def download_and_upload_image():
   urls.clear() # 次回のために配列のデータを削除
 
 
-schedule.every(3).seconds.do(main) # このプログラムを定期実行する時間帯を指定
+schedule.every(10).seconds.do(main) # このプログラムを定期実行する時間帯を指定
 
 while True:
   schedule.run_pending()
