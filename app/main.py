@@ -8,42 +8,61 @@ import datetime
 import schedule
 import time
 
-
 twitter = OAuth1Session(os.environ['CONSUMER_KEY'], os.environ['CONSUMER_SECRET'], os.environ['ACCESS_TOKEN'], os.environ['ACCESS_TOKEN_SECRET'])
 
-twitter_params =  {"screen_name": "", # 取得するユーザーのTwitter ID
-                   "count": 5         # いいねしたツイートの取得数(最大200)
+twitter_params =  {"screen_name": os.environ['TWITTER_USER_ID'], # 取得するユーザーのTwitter ID
+                   "count": 5                                    # 取得するツイート数(最大200)
                    }
 
 json_dictionary = []            # TwitterAPIから返ってくるJSON形式のstr型データをリストに内包される辞書型オブジェクトとして変換したものが入る = [{},{}...{}]
 urls = []                       # json_dictionaryから抽出した画像のURLが入る
-first_execution = True          # このプログラムの実行が初めてかどうかを示す
-previous_latest_tweet_id = 0    # 前回の実行で取得したツイートの中で投稿日が最新のツイートのIDが入る。
-                                # そのツイートからそれ以前の日付のJSONデータをlatest_tweet_check()関数で削除するために使う                           
+first_execution = True          # このプログラムの実行が初めてか、二回目以降かを示す
+
+latest_tweet_id = 0   # 前回の実行で取得したツイートの中で投稿日時が最新のツイートのIDが入る
+                      # ツイートのIDは投稿した日時が遅い(より現在時刻に近くなる)ほど値が大きくなる
+                      # 一度DLした画像を再度DLしてしまうのを避けるため、前回取得した最新時刻のツイートからそれ以前の日時に投稿されたツイートのJSONデータをlatest_tweet_check()関数で削除するために使う                           
+
+new_tweets_flag = ""
 
 def main():
   print("現在時刻：" + str(datetime.datetime.now()))
 
   global first_execution
-  global previous_latest_tweet_id
+  global latest_tweet_id
+  global new_tweets_flag
 
   get_json_with_Twitter_API()
 
-  if(first_execution == False ):
-    print("二回目以降の処理のため、前回取得したツイートをチェックします")
-    latest_tweet_check()
-  else:
-    print("初めての取得です")
-    first_execution = False
-    previous_latest_tweet_id = json_dictionary[0]["id"]
-  
-  if(json_dictionary == []):
-    print("今日新しくいいねしたツイートはありません")
-  else:
-    url_extract()
-    download_and_upload_image()
-  print("----------------------------------------------------------")
+  if first_execution == True:
+    print("初めての実行です")
 
+    # 初回実行時にいいねが一つ以上存在する場合
+    if json_dictionary:
+      first_execution = False
+      latest_tweet_id = json_dictionary[0]["id"]
+      url_extract()
+      download_and_upload_image()
+
+    # 初回実行時にいいねが存在しない場合
+    else:
+      first_execution = False
+      print("現在いいねしているツイートはありません")
+      print("----------------------------------------------------------")
+
+  elif first_execution == False:
+    print("二回目以降の実行のため、前回取得したツイートをチェックします")
+    new_tweets_flag = latest_tweet_check()
+
+    if new_tweets_flag == "new-favtweet":
+      latest_tweet_id = json_dictionary[0]["id"]
+      url_extract()
+      download_and_upload_image()
+    elif new_tweets_flag == "no-new-favtweet":
+      print("今日新しくいいねしたツイートはありませんでした")
+      print("----------------------------------------------------------")
+    elif new_tweets_flag == "no-favtweet":
+      print("現在いいねしているツイートはありません")
+      print("----------------------------------------------------------")
 
 
 def get_json_with_Twitter_API():
@@ -53,18 +72,27 @@ def get_json_with_Twitter_API():
   print("JSONを取得しました")
 
 
-def latest_tweet_check():
-  global previous_latest_tweet_id
+def latest_tweet_check() -> str:
+  global latest_tweet_id
 
-  new_latest_tweet_id = json_dictionary[0]["id"] # 今回取得した最新のツイートIDが入る
+  # 二回目以降の実行時でもいいねしているツイートが存在しない場合
+  if json_dictionary == []:
+    return "no-favtweet"
 
-  # 前回取得した最新のツイートからそれ以前のデータを削除し、次回のチェックのためにnew_latest_tweet_idをprevious_latest_tweet_idのに入れる
+  # いいねしているツイートが一つ以上存在する場合
   for i in range(len(json_dictionary)):
-    if(json_dictionary[i]["id"] == previous_latest_tweet_id):
+    if json_dictionary[i]["id"] == latest_tweet_id:
+      latest_tweet_id = json_dictionary[0]["id"]
       del json_dictionary[i:]
-      previous_latest_tweet_id = new_latest_tweet_id
+
+      # 新しくいいねしたツイートが存在しなかった場合
+      if json_dictionary == []:
+        return "no-new-favtweet"
+    
       break
 
+  return "new-favtweet"
+      
 
 def url_extract():
   global urls
@@ -88,7 +116,7 @@ def url_extract():
 def download_and_upload_image():
   global urls
   s3 = boto3.resource('s3')
-  bucket = s3.Bucket('バケット名')
+  bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
 
   upload_date = datetime.date.today()
   
@@ -97,11 +125,12 @@ def download_and_upload_image():
     print(url + "：の画像をダウンロードしました")
     bucket.upload_fileobj(io.BytesIO(res), str(upload_date) + '/' + url[27:]) # バケット名/YYYY-MM-DD/xxx.jpg の形式でS3にアップロード
     print("ダウンロードした画像をアップロードしました")
+    print("----------------------------------------------------------")
 
   urls.clear() # 次回のために配列のデータを削除
 
 
-schedule.every().day.at("23:59").do(main) # このプログラムを定期実行する時間帯を指定
+schedule.every(3).seconds.do(main) # このプログラムを定期実行する時間帯を指定
 
 while True:
   schedule.run_pending()
