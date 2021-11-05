@@ -123,7 +123,7 @@ def download_and_upload_image():
     with open(dir_path + url[27:], "wb") as image:
       image.write(res)
 
-    print("ダウンロードした画像をアップロードしました")
+    print("ダウンロードした画像を保存しました")
     print("----------------------------------------------------------")
 
   urls.clear() # 次回のために配列のデータを削除
