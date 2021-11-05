@@ -1,6 +1,4 @@
 from requests_oauthlib import OAuth1Session
-import boto3
-import io
 import os
 import requests
 import json
@@ -23,6 +21,10 @@ latest_tweet_id = 0   # 前回の実行で取得したツイートの中で投�
                       # 一度DLした画像を再度DLしてしまうのを避けるため、前回取得した最新時刻のツイートからそれ以前の日時に投稿されたツイートのJSONデータをlatest_tweet_check()関数で削除するために使う                           
 
 new_tweets_flag = ""
+
+dir_path = f"/home/{os.environ.get('USER')}/Twitter-fav-images/"
+os.makedirs(dir_path)
+os.chmod(dir_path, 0o777)
 
 def main():
   print("現在時刻：" + str(datetime.datetime.now()))
@@ -114,15 +116,13 @@ def url_extract():
 
 def download_and_upload_image():
   global urls
-  s3 = boto3.resource('s3')
-  bucket = s3.Bucket(os.environ['S3_BUCKET_NAME'])
-
-  upload_date = datetime.date.today()
   
   for url in urls:
     res = requests.get(url+":orig").content # 抽出したurlから原寸画像をダウンロード
     print(url + "：の画像をダウンロードしました")
-    bucket.upload_fileobj(io.BytesIO(res), str(upload_date) + '/' + url[27:]) # バケット名/YYYY-MM-DD/xxx.jpg の形式でS3にアップロード
+    with open(dir_path + url[27:], "wb") as image:
+      image.write(res)
+
     print("ダウンロードした画像をアップロードしました")
     print("----------------------------------------------------------")
 
