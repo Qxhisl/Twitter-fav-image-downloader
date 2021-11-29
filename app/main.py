@@ -11,7 +11,7 @@ import time
 twitter = OAuth1Session(os.environ['CONSUMER_KEY'], os.environ['CONSUMER_SECRET'], os.environ['ACCESS_TOKEN'], os.environ['ACCESS_TOKEN_SECRET'])
 
 twitter_params =  {"screen_name": os.environ['TWITTER_USER_ID'], # 取得するユーザーのTwitter ID
-                   "count": 5                                    # 取得するツイート数(最大200)
+                   "count": int(os.environ['TWITTER_API_COUNT'])      # 取得するツイート数(最大200)
                    }
 
 json_dictionary = []            # TwitterAPIから返ってくるJSON形式のstr型データをリストに内包される辞書型オブジェクトとして変換したものが入る = [{},{}...{}]
@@ -129,7 +129,7 @@ def download_and_upload_image():
   urls.clear() # 次回のために配列のデータを削除
 
 
-schedule.every(10).seconds.do(main) # このプログラムを定期実行する時間帯を指定
+schedule.every().day.at(os.environ['EXECUTION_DATE']).do(main) # このプログラムを定期実行する時間帯を指定
 
 while True:
   schedule.run_pending()
